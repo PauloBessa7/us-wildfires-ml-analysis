@@ -6,6 +6,7 @@ Disciplina de Inteligência Artificial , Professor Munif , Unicesumar 2026
 
 - Paulo Henrique Basso Bessa - RA: 26005799-2
 - Ricardo camati - RA: 22014446-2
+- Caua Cesar da Silva de Oliveira - RA: 23217378-2
 
 ## Resumo do projeto
 

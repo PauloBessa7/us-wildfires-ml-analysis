@@ -8,11 +8,11 @@ Disciplina de Inteligência Artificial , Professor Munif , Unicesumar 2026
 
 ## Resumo do projeto
 
-Este projeto utiliza dados históricos de incêndios florestais nos Estados Unidos para investigar se é possível prever a classe de tamanho final de um incêndio a partir de informações conhecidas no registro da ocorrência, como localização, ano, dia do ano, estado e causa reportada.
+Este projeto utiliza dados históricos de incêndios florestais no território continental dos Estados Unidos para investigar se é possível prever a classe de tamanho final de um incêndio a partir de informações conhecidas no registro da ocorrência, como localização, ano, dia do ano, estado e causa reportada.
 
 O problema foi tratado como uma tarefa de classificação multiclasse. A variável alvo é `FIRE_SIZE_CLASS`, que classifica os incêndios de `A` até `G`, sendo `A` a menor classe e `G` a maior. Foram comparados três modelos de Inteligência Artificial: KNN, Random Forest e MLP.
 
-Hipótese da equipe: atributos relacionados à localização e ao contexto da ocorrência, principalmente latitude, longitude, estado, data e causa, contêm padrões suficientes para melhorar a previsão da classe de tamanho em relação a um palpite baseado apenas na classe majoritária.
+Hipótese da equipe: atributos relacionados à localização e ao contexto da ocorrência, principalmente latitude, longitude, estado, data e causa, contêm padrões suficientes para melhorar a previsão da classe de tamanho em relação a um palpite baseado apenas na classe majoritária da amostra usada no experimento.
 
 ## Dataset
 
@@ -34,7 +34,22 @@ Distribuição das classes no dataset completo:
 | F | 7.786 | 0,41% |
 | G | 3.773 | 0,20% |
 
-Como a classe `B` representa quase metade da base, a avaliação não deve considerar apenas acurácia. Por isso, também foi usado o F1-score ponderado.
+Como a classe `B` representa quase metade da base completa, a modelagem usa uma amostra mais balanceada por classe. O recorte do experimento considera apenas os EUA continentais, com latitude entre `24` e `50` e longitude entre `-125` e `-66`. Esse recorte exclui Alaska, Hawaii e Porto Rico por decisão metodológica.
+
+Distribuição da amostra usada na modelagem:
+
+| Classe | Registros na amostra |
+|---|---:|
+| A | 10.000 |
+| B | 10.000 |
+| C | 10.000 |
+| D | 10.000 |
+| E | 10.000 |
+| F | 7.316 |
+| G | 3.114 |
+| **Total** | **60.430** |
+
+A divisão treino/teste foi estratificada em 80% para treino e 20% para teste. O conjunto de treino ficou com 48.344 registros e o conjunto de teste com 12.086 registros.
 
 ![Mapa dos incêndios por classe](MapaIncendiosPorClasse.png)
 
@@ -56,9 +71,10 @@ A coluna `FIRE_SIZE` é carregada apenas para referência, mas não é usada com
 Tratamentos realizados:
 
 - remoção de registros com valores nulos nas colunas usadas;
+- filtro geográfico para manter apenas registros dos EUA continentais;
 - filtro das classes válidas de `A` a `G`;
-- amostragem de 110.000 registros com `random_state=42`;
-- divisão estratificada em 100.000 registros de treino e 10.000 de teste;
+- amostragem de até 10.000 registros por classe, usando o máximo disponível quando a classe possui menos registros;
+- divisão estratificada 80/20 entre treino e teste;
 - padronização das variáveis numéricas com `StandardScaler`;
 - codificação das variáveis categóricas com `OneHotEncoder`.
 
@@ -99,9 +115,9 @@ Resultados da execução atual do notebook:
 
 | Modelo | Melhor conjunto de features | Acurácia | F1-score ponderado | Tempo |
 |---|---|---:|---:|---:|
-| KNN | `localizacao_causa` | 57,87% | 0,5553 | 9,14s |
-| Random Forest | `todos_sem_fire_size` | 61,19% | 0,5865 | 12,01s |
-| MLP | `todos_sem_fire_size` | 61,32% | 0,5701 | 4,35s |
+| KNN | `localizacao_causa` | 31,49% | 0,3061 | 5,50s |
+| Random Forest | `localizacao_estado_ano_diaAno` | 34,13% | 0,3374 | 4,20s |
+| MLP | `todos_sem_fire_size` | 33,23% | 0,3157 | 2,09s |
 
 ![Comparação dos modelos](ComparacaoModelos.png)
 
@@ -121,15 +137,15 @@ MLP:
 
 ## Comparação dos resultados
 
-O MLP obteve a maior acurácia da execução, com **61,32%**, mas o Random Forest teve o maior F1-score ponderado, com **0,5865**. Como o dataset é bastante desbalanceado, o F1-score ponderado é importante para analisar o desempenho além da taxa geral de acertos.
+O Random Forest obteve o melhor desempenho geral da execução, com **34,13%** de acurácia e **0,3374** de F1-score ponderado. O MLP ficou próximo em acurácia, com **33,23%**, mas apresentou F1-score ponderado menor, de **0,3157**.
 
-O KNN ficou abaixo dos modelos da Parte 2, mas ainda superou a classe majoritária do dataset completo, que representa aproximadamente **49,95%** dos registros. Isso indica que as features escolhidas carregam informação útil para a classificação, principalmente quando combinam localização, tempo, estado e causa.
+Com a amostra balanceada, a classe majoritária da amostra representa aproximadamente **16,55%** dos registros. Todos os modelos superaram esse baseline simples, indicando que as features escolhidas carregam informação útil para a classificação. Ao mesmo tempo, as métricas ficaram menores do que na base desbalanceada, porque o experimento deixou de favorecer o acerto nas classes `A` e `B`.
 
 ## Conclusão
 
-Os resultados mostram que é possível prever a classe de tamanho de incêndios florestais com desempenho superior a um baseline simples baseado na classe majoritária. O melhor resultado em acurácia foi obtido pelo MLP, enquanto o Random Forest apresentou o melhor F1-score ponderado.
+Os resultados mostram que é possível prever a classe de tamanho de incêndios florestais com desempenho superior a um baseline simples baseado na classe majoritária da amostra. O melhor resultado geral foi obtido pelo Random Forest usando localização, estado, ano e dia do ano.
 
-Para este problema, a combinação `todos_sem_fire_size` foi a mais forte nos modelos Random Forest e MLP, sugerindo que a previsão melhora quando o modelo recebe informações geográficas, temporais e categóricas em conjunto. Ainda assim, o desempenho nas classes maiores tende a ser mais difícil, pois as classes `D`, `E`, `F` e `G` possuem poucos exemplos em relação às classes `A` e `B`.
+Para este problema, os modelos da Parte 2 continuaram superando o KNN, mas a amostragem por classe deixou a tarefa mais difícil e mais honesta. O resultado sugere que localização e tempo são fatores relevantes, mas ainda não suficientes para uma previsão altamente precisa da classe final de tamanho.
 
 ## Como executar
 
